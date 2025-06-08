@@ -242,19 +242,54 @@
         }
 
         .lecture-detail {
-            margin-bottom: 20px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: flex-start;
         }
 
         .detail-label {
             font-weight: 600;
             color: #495057;
-            display: inline-block;
-            width: 80px;
-            margin-bottom: 5px;
+            min-width: 100px;
+            margin-right: 15px;
+            flex-shrink: 0;
         }
 
         .detail-value {
             color: #6c757d;
+            flex: 1;
+            line-height: 1.5;
+        }
+
+        .product-tag {
+            display: inline-block;
+            background: linear-gradient(135deg, #17a2b8, #20c997);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: 500;
+            margin: 2px 4px 2px 0;
+        }
+
+        .venue-link {
+            color: #007bff;
+            text-decoration: none;
+            border-bottom: 1px dotted #007bff;
+            transition: all 0.3s ease;
+        }
+
+        .venue-link:hover {
+            color: #0056b3;
+            border-bottom-style: solid;
+            background-color: rgba(0, 123, 255, 0.1);
+            padding: 2px 4px;
+            border-radius: 4px;
+        }
+
+        .time-display {
+            font-weight: 600;
+            color: #28a745;
         }
 
         .add-lecture-btn {
@@ -320,6 +355,8 @@
             font-weight: 500;
             transition: all 0.3s ease;
             margin-right: 10px;
+            text-decoration: none;
+            display: inline-block;
         }
 
         .btn-primary:hover {
@@ -337,11 +374,22 @@
             font-size: 16px;
             font-weight: 500;
             transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
         }
 
         .btn-secondary:hover {
             background: #545b62;
             transform: translateY(-2px);
+        }
+
+        .form-row {
+            display: flex;
+            gap: 15px;
+        }
+
+        .form-row .form-group {
+            flex: 1;
         }
 
         @media (max-width: 768px) {
@@ -367,6 +415,18 @@
                 font-size: 10px;
                 padding: 2px 6px;
             }
+
+            .lecture-detail {
+                flex-direction: column;
+            }
+
+            .detail-label {
+                margin-bottom: 5px;
+            }
+
+            .form-row {
+                flex-direction: column;
+            }
         }
     </style>
 </head>
@@ -374,7 +434,7 @@
     <div class="container">
         <div class="header">
             <h1>📅 講演会カレンダー</h1>
-            <p>講演会・セミナー情報を一目で確認</p>
+            <p>血液内科関連（悪性リンパ腫DLBCL・FLを中心とした）医療講演会カレンダー</p>
         </div>
 
         <div class="calendar-nav">
@@ -418,26 +478,54 @@
                         <label class="form-label" for="lectureTitle">講演会タイトル</label>
                         <input type="text" id="lectureTitle" class="form-input" required>
                     </div>
-                    <div class="form-group">
-                        <label class="form-label" for="lectureDate">開催日</label>
-                        <input type="date" id="lectureDate" class="form-input" required>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label" for="lectureDate">開催日</label>
+                            <input type="date" id="lectureDate" class="form-input" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="lectureStartTime">開始時間</label>
+                            <input type="time" id="lectureStartTime" class="form-input" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="lectureEndTime">終了時間</label>
+                            <input type="time" id="lectureEndTime" class="form-input">
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label class="form-label" for="lectureTime">開催時間</label>
-                        <input type="time" id="lectureTime" class="form-input" required>
-                    </div>
+
                     <div class="form-group">
                         <label class="form-label" for="lectureSpeaker">講演者</label>
                         <input type="text" id="lectureSpeaker" class="form-input" required>
                     </div>
-                    <div class="form-group">
-                        <label class="form-label" for="lectureLocation">会場</label>
-                        <input type="text" id="lectureLocation" class="form-input" required>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label" for="lectureLocation">会場</label>
+                            <input type="text" id="lectureLocation" class="form-input" placeholder="会場名またはURL" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="lectureCompany">主催会社</label>
+                            <select id="lectureCompany" class="form-input">
+                                <option value="novartis">Novartis</option>
+                                <option value="symbio">SymBio</option>
+                                <option value="bms">BMS</option>
+                                <option value="chugai">中外製薬</option>
+                                <option value="other">その他</option>
+                            </select>
+                        </div>
                     </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="lectureProducts">関連製品（カンマ区切り）</label>
+                        <input type="text" id="lectureProducts" class="form-input" placeholder="例: ルンスミオ, キムリア">
+                    </div>
+
                     <div class="form-group">
                         <label class="form-label" for="lectureDescription">概要</label>
                         <textarea id="lectureDescription" class="form-input form-textarea"></textarea>
                     </div>
+
                     <div style="text-align: center; margin-top: 30px;">
                         <button type="submit" class="btn-primary">追加</button>
                         <button type="button" class="btn-secondary" onclick="closeAddLectureModal()">キャンセル</button>
@@ -449,97 +537,115 @@
 
     <script>
         let currentDate = new Date();
-        let         lectures = {
+        let lectures = {
             '2025-06-09': [
                 {
                     title: 'CRS/ICANSマネジメントセミナー',
-                    time: '18:30',
+                    startTime: '18:30',
+                    endTime: '19:40',
                     speaker: '藤本 勝也先生 他',
                     location: 'オンライン',
                     description: 'CRS対策における薬剤師の役割、看護師の実体験と対応、二重特異性抗体によるICANSへの早期対応などについて',
                     company: 'other',
-                    endDate: '2025-06-16'
+                    endDate: '2025-06-16',
+                    products: ['二重特異性抗体']
                 }
             ],
             '2025-06-11': [
                 {
                     title: 'SymBio Medical Profession Lecture',
-                    time: '19:00',
+                    startTime: '19:00',
+                    endTime: '19:45',
                     speaker: '中村 孝子先生',
-                    location: 'WEBセミナー',
+                    location: 'https://symbio-pharma.com/webinar',
                     description: '化学療法センターにおける問診すり抜け割合の削減について',
-                    company: 'symbio'
+                    company: 'symbio',
+                    products: ['ベンダムスチン']
                 }
             ],
             '2025-06-12': [
                 {
                     title: 'Novartis - 生成AIと血液診療',
-                    time: '19:00',
+                    startTime: '19:00',
+                    endTime: '20:00',
                     speaker: '赤羽 大悟先生、今井 翔太先生',
-                    location: 'オンライン',
+                    location: 'https://novartis-events.com/ai-seminar',
                     description: '臨床医が知っておきたいAIの進歩とこれから、生成AIで世界はこう変わる',
-                    company: 'novartis'
+                    company: 'novartis',
+                    products: ['AI診断支援システム']
                 }
             ],
             '2025-06-17': [
                 {
                     title: 'Hematology Rookies Seminar',
-                    time: '18:30',
+                    startTime: '18:30',
+                    endTime: '19:20',
                     speaker: '渡邉 純一先生',
-                    location: 'オンライン（Live配信）',
+                    location: 'https://hematology-rookies.com/live',
                     description: '悪性リンパ腫を理解する分類・診断・治療の要点整理',
-                    company: 'other'
+                    company: 'other',
+                    products: ['悪性リンパ腫治療薬']
                 }
             ],
             '2025-06-19': [
                 {
                     title: 'Novartis Hematology Web Seminar',
-                    time: '19:00',
+                    startTime: '19:00',
+                    endTime: '20:10',
                     speaker: '豊嶋 崇徳先生、藤本 亜弓先生、赤星 佑先生',
-                    location: 'オンライン',
+                    location: 'https://novartis.co.jp/hematology-seminar',
                     description: '血液内科の魅力を伝える～私が思う血液内科医のイメージと実際、造血幹細胞移植について',
-                    company: 'novartis'
+                    company: 'novartis',
+                    products: ['造血幹細胞移植関連薬剤']
                 }
             ],
             '2025-06-23': [
                 {
                     title: 'SymBio Case Report seminar',
-                    time: '19:00',
+                    startTime: '19:00',
+                    endTime: '20:00',
                     speaker: '梶 大介先生、中村 嵩先生、横山 絵美先生',
-                    location: 'WEBセミナー',
+                    location: 'https://symbio-case-reports.com',
                     description: 'ベンダムスチンによる日和見感染について、BG療法後のCMV感染が起因となったPAI、BG療法によって発現したPML',
-                    company: 'symbio'
+                    company: 'symbio',
+                    products: ['ベンダムスチン', 'トレアキシン']
                 }
             ],
             '2025-06-25': [
                 {
                     title: 'BMS Lymphoma Web Seminar',
-                    time: '19:00',
+                    startTime: '19:00',
+                    endTime: '19:40',
                     speaker: '梶 大介先生',
-                    location: 'オンライン',
+                    location: 'https://bms-lymphoma.com/webinar',
                     description: 'CART細胞療法によるFL治療の進化：新たな可能性',
-                    company: 'bms'
+                    company: 'bms',
+                    products: ['キムリア', 'ブレヤンジ']
                 }
             ],
             '2025-07-10': [
                 {
                     title: '中外eセミナー on DLBCL',
-                    time: '18:30',
+                    startTime: '18:30',
+                    endTime: '19:20',
                     speaker: '正木 康史先生、梶 大介先生、鎌田 浩稔先生',
-                    location: 'オンライン',
+                    location: 'https://chugai-dlbcl.com',
                     description: '高齢者DLBCLの疫学とPOLARIX試験の解釈、高齢者DLBCLにおける治療戦略',
                     company: 'chugai',
-                    endDate: '2025-07-17'
+                    endDate: '2025-07-17',
+                    products: ['ポライビー', 'ガザイバ']
                 }
             ],
             '2025-07-16': [
                 {
                     title: 'BMS Lymphoma Web Seminar',
-                    time: '19:00',
+                    startTime: '19:00',
+                    endTime: '19:45',
                     speaker: '時田 真一先生',
-                    location: 'オンライン',
+                    location: 'https://bms-cart.com/dlbcl-seminar',
                     description: '症例から考えるDLBCLに対するCAR T細胞療法の位置付け',
-                    company: 'bms'
+                    company: 'bms',
+                    products: ['ブレヤンジ', 'キムリア']
                 }
             ]
         };
@@ -550,6 +656,36 @@
         ];
 
         const dayNames = ['日', '月', '火', '水', '木', '金', '土'];
+
+        // URLかどうかを判定する関数
+        function isURL(str) {
+            return str.startsWith('http://') || str.startsWith('https://');
+        }
+
+        // 会場名をリンク化する関数
+        function formatVenue(location) {
+            if (isURL(location)) {
+                return `<a href="${location}" target="_blank" class="venue-link">🔗 ${location.replace(/^https?:\/\//, '').split('/')[0]}</a>`;
+            }
+            return location;
+        }
+
+        // 時間表示フォーマット関数
+        function formatTime(startTime, endTime) {
+            if (endTime) {
+                return `<span class="time-display">${startTime} - ${endTime}</span>`;
+            }
+            return `<span class="time-display">${startTime}</span>`;
+        }
+
+        // 製品タグ作成関数
+        function createProductTags(products) {
+            if (!products || products.length === 0) return '';
+            
+            return products.map(product => 
+                `<span class="product-tag">${product}</span>`
+            ).join('');
+        }
 
         function renderCalendar() {
             const year = currentDate.getFullYear();
@@ -600,7 +736,7 @@
                     lectures[dateKey].forEach(lecture => {
                         const lectureItem = document.createElement('div');
                         lectureItem.className = `lecture-item ${lecture.company || 'other'}`;
-                        lectureItem.textContent = `${lecture.time} ${lecture.title}`;
+                        lectureItem.textContent = `${lecture.startTime} ${lecture.title}`;
                         lectureItem.onclick = () => showLectureDetail(lecture);
                         dayCell.appendChild(lectureItem);
                     });
@@ -637,38 +773,31 @@
             let companyName = '';
             switch(lecture.company) {
                 case 'novartis': companyName = 'Novartis'; break;
-                case 'symbio': companyName = 'SymBio'; break;
-                case 'bms': companyName = 'BMS'; break;
+                case 'symbio': companyName = 'SymBio製薬'; break;
+                case 'bms': companyName = 'ブリストル・マイヤーズ スクイブ'; break;
                 case 'chugai': companyName = '中外製薬'; break;
-                default: companyName = ''; break;
+                default: companyName = 'その他'; break;
             }
             
             let endDateInfo = '';
             if (lecture.endDate) {
-                endDateInfo = `<div class="lecture-detail">
-                    <span class="detail-label">終了予定:</span>
-                    <span class="detail-value">${lecture.endDate}</span>
-                </div>`;
+                endDateInfo = `
+                    <div class="lecture-detail">
+                        <span class="detail-label">終了予定:</span>
+                        <span class="detail-value">${lecture.endDate}</span>
+                    </div>`;
+            }
+
+            let productsInfo = '';
+            if (lecture.products && lecture.products.length > 0) {
+                productsInfo = `
+                    <div class="lecture-detail">
+                        <span class="detail-label">関連製品:</span>
+                        <div class="detail-value">${createProductTags(lecture.products)}</div>
+                    </div>`;
             }
             
             document.getElementById('modalBody').innerHTML = `
-                ${companyName ? `<div class="lecture-detail">
-                    <span class="detail-label">主催:</span>
-                    <span class="detail-value">${companyName}</span>
-                </div>` : ''}
-                <div class="lecture-detail">
-                    <span class="detail-label">開催時間:</span>
-                    <span class="detail-value">${lecture.time}</span>
-                </div>
-                ${endDateInfo}
-                <div class="lecture-detail">
-                    <span class="detail-label">講演者:</span>
-                    <span class="detail-value">${lecture.speaker}</span>
-                </div>
-                <div class="lecture-detail">
-                    <span class="detail-label">会場:</span>
-                    <span class="detail-value">${lecture.location}</span>
-                </div>
                 <div class="lecture-detail">
                     <span class="detail-label">概要:</span>
                     <div class="detail-value" style="margin-top: 10px; line-height: 1.6;">${lecture.description}</div>
@@ -695,18 +824,26 @@
             
             const title = document.getElementById('lectureTitle').value;
             const date = document.getElementById('lectureDate').value;
-            const time = document.getElementById('lectureTime').value;
+            const startTime = document.getElementById('lectureStartTime').value;
+            const endTime = document.getElementById('lectureEndTime').value;
             const speaker = document.getElementById('lectureSpeaker').value;
             const location = document.getElementById('lectureLocation').value;
+            const company = document.getElementById('lectureCompany').value;
+            const products = document.getElementById('lectureProducts').value;
             const description = document.getElementById('lectureDescription').value;
+            
+            // 製品リストを配列に変換
+            const productArray = products ? products.split(',').map(p => p.trim()).filter(p => p) : [];
             
             const newLecture = {
                 title: title,
-                time: time,
+                startTime: startTime,
+                endTime: endTime || null,
                 speaker: speaker,
                 location: location,
                 description: description,
-                company: 'other'
+                company: company,
+                products: productArray
             };
             
             if (!lectures[date]) {
@@ -734,7 +871,22 @@
         }
 
         // 初期化
-        renderCalendar();
-    </script>
-</body>
-</html>
+        renderCalendar();detail-label">主催:</span>
+                    <span class="detail-value">${companyName}</span>
+                </div>
+                <div class="lecture-detail">
+                    <span class="detail-label">開催時間:</span>
+                    <div class="detail-value">${formatTime(lecture.startTime, lecture.endTime)}</div>
+                </div>
+                ${endDateInfo}
+                <div class="lecture-detail">
+                    <span class="detail-label">講演者:</span>
+                    <span class="detail-value">${lecture.speaker}</span>
+                </div>
+                <div class="lecture-detail">
+                    <span class="detail-label">会場:</span>
+                    <div class="detail-value">${formatVenue(lecture.location)}</div>
+                </div>
+                ${productsInfo}
+                <div class="lecture-detail">
+                    <span class="
