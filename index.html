@@ -141,6 +141,7 @@
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
+            position: relative;
         }
 
         .lecture-item.novartis {
@@ -159,13 +160,59 @@
             background: linear-gradient(135deg, #fd7e14, #dc3545);
         }
 
+        .lecture-item.abbvie {
+            background: linear-gradient(135deg, #ff6b35, #f7931e);
+        }
+
+        .lecture-item.eisai {
+            background: linear-gradient(135deg, #007bff, #0056b3);
+        }
+
+        .lecture-item.takeda {
+            background: linear-gradient(135deg, #20c997, #17a2b8);
+        }
+
         .lecture-item.other {
             background: linear-gradient(135deg, #6c757d, #495057);
+        }
+
+        /* エプキンリ特別スタイル */
+        .lecture-item.epcoritamab {
+            background: linear-gradient(135deg, #ff0080, #ff4081);
+            border: 2px solid #ffffff;
+            box-shadow: 0 0 10px rgba(255, 0, 128, 0.5);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 10px rgba(255, 0, 128, 0.5); }
+            50% { box-shadow: 0 0 20px rgba(255, 0, 128, 0.8); }
+            100% { box-shadow: 0 0 10px rgba(255, 0, 128, 0.5); }
         }
 
         .lecture-item:hover {
             transform: scale(1.05);
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .lecture-item .edit-btn {
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            background: rgba(255, 255, 255, 0.8);
+            color: #333;
+            border: none;
+            border-radius: 50%;
+            width: 16px;
+            height: 16px;
+            font-size: 10px;
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .lecture-item:hover .edit-btn {
+            opacity: 1;
         }
 
         .modal {
@@ -263,13 +310,22 @@
 
         .product-tag {
             display: inline-block;
-            background: linear-gradient(135deg, #17a2b8, #20c997);
             color: white;
             padding: 4px 12px;
             border-radius: 15px;
             font-size: 12px;
             font-weight: 500;
             margin: 2px 4px 2px 0;
+        }
+
+        .product-tag.epcoritamab {
+            background: linear-gradient(135deg, #ff0080, #ff4081);
+            border: 1px solid #ffffff;
+            box-shadow: 0 2px 8px rgba(255, 0, 128, 0.3);
+        }
+
+        .product-tag.default {
+            background: linear-gradient(135deg, #17a2b8, #20c997);
         }
 
         .venue-link {
@@ -290,6 +346,22 @@
         .time-display {
             font-weight: 600;
             color: #28a745;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .btn-edit {
+            background: linear-gradient(135deg, #ffc107, #e0a800);
+            color: white;
+        }
+
+        .btn-delete {
+            background: linear-gradient(135deg, #dc3545, #c82333);
+            color: white;
         }
 
         .add-lecture-btn {
@@ -392,6 +464,15 @@
             flex: 1;
         }
 
+        .company-preview {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 20px;
+            color: white;
+            font-size: 14px;
+            margin-top: 10px;
+        }
+
         @media (max-width: 768px) {
             .header h1 {
                 font-size: 2rem;
@@ -465,11 +546,11 @@
         </div>
     </div>
 
-    <!-- 講演会追加モーダル -->
+    <!-- 講演会追加・編集モーダル -->
     <div id="addLectureModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <div class="modal-title">新しい講演会を追加</div>
+                <div class="modal-title" id="addModalTitle">新しい講演会を追加</div>
                 <span class="close" onclick="closeAddLectureModal()">&times;</span>
             </div>
             <div class="modal-body">
@@ -506,19 +587,24 @@
                         </div>
                         <div class="form-group">
                             <label class="form-label" for="lectureCompany">主催会社</label>
-                            <select id="lectureCompany" class="form-input">
+                            <select id="lectureCompany" class="form-input" onchange="updateCompanyPreview()">
+                                <option value="abbvie">AbbVie（エプキンリ）</option>
                                 <option value="novartis">Novartis</option>
-                                <option value="symbio">SymBio</option>
-                                <option value="bms">BMS</option>
+                                <option value="symbio">SymBio製薬</option>
+                                <option value="bms">ブリストル・マイヤーズ スクイブ</option>
                                 <option value="chugai">中外製薬</option>
+                                <option value="eisai">エーザイ</option>
+                                <option value="takeda">武田薬品</option>
                                 <option value="other">その他</option>
                             </select>
+                            <div id="companyPreview" class="company-preview"></div>
                         </div>
                     </div>
 
                     <div class="form-group">
                         <label class="form-label" for="lectureProducts">関連製品（カンマ区切り）</label>
-                        <input type="text" id="lectureProducts" class="form-input" placeholder="例: ルンスミオ, キムリア">
+                        <input type="text" id="lectureProducts" class="form-input" placeholder="例: エプキンリ, ルンスミオ">
+                        <small style="color: #6c757d;">※エプキンリと入力すると特別なスタイルが適用されます</small>
                     </div>
 
                     <div class="form-group">
@@ -527,7 +613,7 @@
                     </div>
 
                     <div style="text-align: center; margin-top: 30px;">
-                        <button type="submit" class="btn-primary">追加</button>
+                        <button type="submit" class="btn-primary" id="submitBtn">追加</button>
                         <button type="button" class="btn-secondary" onclick="closeAddLectureModal()">キャンセル</button>
                     </div>
                 </form>
@@ -537,9 +623,12 @@
 
     <script>
         let currentDate = new Date();
+        let editingLectureId = null;
+        
         let lectures = {
             '2025-06-09': [
                 {
+                    id: 'lecture_1',
                     title: 'CRS/ICANSマネジメントセミナー',
                     startTime: '18:30',
                     endTime: '19:40',
@@ -551,8 +640,22 @@
                     products: ['二重特異性抗体']
                 }
             ],
+            '2025-06-18': [
+                {
+                    id: 'lecture_epcoritamab_1',
+                    title: 'Epcoritamab Seminar in Chugoku',
+                    startTime: '19:00',
+                    endTime: '20:20',
+                    speaker: '島田 和之先生（名古屋大学医学部附属病院 血液内科）、河村 浩二先生、鈴木 律朗先生（島根大学医学部内科学講座）、福原 規子先生（東北大学大学院医学系研究科 血液内科学分野）',
+                    location: 'https://x.gd/sPHdC',
+                    description: '19:00〜20:20 特別講演① : 19:00〜19:40 座長 : 河村 浩二 先生 演者① : 島田 和之 先生 名古屋大学医学部附属病院 血液内科 講師 「再発・難治性DLBCLの治療について考える　ーエプキンリの実診療での経験を踏まえてー」 特別講演② : 19:40〜20:20 座長 : 鈴木 律朗 先生 島根大学医学部内科学講座 血液・腫瘍内科学 教授 演者② : 福原 規子 先生 東北大学大学院医学系研究科 血液内科学分野 准教授　「再発難治性FLの治療戦略」',
+                    company: 'abbvie',
+                    products: ['エプキンリ']
+                }
+            ],
             '2025-06-11': [
                 {
+                    id: 'lecture_2',
                     title: 'SymBio Medical Profession Lecture',
                     startTime: '19:00',
                     endTime: '19:45',
@@ -565,6 +668,7 @@
             ],
             '2025-06-12': [
                 {
+                    id: 'lecture_3',
                     title: 'Novartis - 生成AIと血液診療',
                     startTime: '19:00',
                     endTime: '20:00',
@@ -573,79 +677,6 @@
                     description: '臨床医が知っておきたいAIの進歩とこれから、生成AIで世界はこう変わる',
                     company: 'novartis',
                     products: ['AI診断支援システム']
-                }
-            ],
-            '2025-06-17': [
-                {
-                    title: 'Hematology Rookies Seminar',
-                    startTime: '18:30',
-                    endTime: '19:20',
-                    speaker: '渡邉 純一先生',
-                    location: 'https://hematology-rookies.com/live',
-                    description: '悪性リンパ腫を理解する分類・診断・治療の要点整理',
-                    company: 'other',
-                    products: ['悪性リンパ腫治療薬']
-                }
-            ],
-            '2025-06-19': [
-                {
-                    title: 'Novartis Hematology Web Seminar',
-                    startTime: '19:00',
-                    endTime: '20:10',
-                    speaker: '豊嶋 崇徳先生、藤本 亜弓先生、赤星 佑先生',
-                    location: 'https://novartis.co.jp/hematology-seminar',
-                    description: '血液内科の魅力を伝える～私が思う血液内科医のイメージと実際、造血幹細胞移植について',
-                    company: 'novartis',
-                    products: ['造血幹細胞移植関連薬剤']
-                }
-            ],
-            '2025-06-23': [
-                {
-                    title: 'SymBio Case Report seminar',
-                    startTime: '19:00',
-                    endTime: '20:00',
-                    speaker: '梶 大介先生、中村 嵩先生、横山 絵美先生',
-                    location: 'https://symbio-case-reports.com',
-                    description: 'ベンダムスチンによる日和見感染について、BG療法後のCMV感染が起因となったPAI、BG療法によって発現したPML',
-                    company: 'symbio',
-                    products: ['ベンダムスチン', 'トレアキシン']
-                }
-            ],
-            '2025-06-25': [
-                {
-                    title: 'BMS Lymphoma Web Seminar',
-                    startTime: '19:00',
-                    endTime: '19:40',
-                    speaker: '梶 大介先生',
-                    location: 'https://bms-lymphoma.com/webinar',
-                    description: 'CART細胞療法によるFL治療の進化：新たな可能性',
-                    company: 'bms',
-                    products: ['キムリア', 'ブレヤンジ']
-                }
-            ],
-            '2025-07-10': [
-                {
-                    title: '中外eセミナー on DLBCL',
-                    startTime: '18:30',
-                    endTime: '19:20',
-                    speaker: '正木 康史先生、梶 大介先生、鎌田 浩稔先生',
-                    location: 'https://chugai-dlbcl.com',
-                    description: '高齢者DLBCLの疫学とPOLARIX試験の解釈、高齢者DLBCLにおける治療戦略',
-                    company: 'chugai',
-                    endDate: '2025-07-17',
-                    products: ['ポライビー', 'ガザイバ']
-                }
-            ],
-            '2025-07-16': [
-                {
-                    title: 'BMS Lymphoma Web Seminar',
-                    startTime: '19:00',
-                    endTime: '19:45',
-                    speaker: '時田 真一先生',
-                    location: 'https://bms-cart.com/dlbcl-seminar',
-                    description: '症例から考えるDLBCLに対するCAR T細胞療法の位置付け',
-                    company: 'bms',
-                    products: ['ブレヤンジ', 'キムリア']
                 }
             ]
         };
@@ -656,6 +687,28 @@
         ];
 
         const dayNames = ['日', '月', '火', '水', '木', '金', '土'];
+
+        const companyNames = {
+            'abbvie': 'AbbVie',
+            'novartis': 'Novartis',
+            'symbio': 'SymBio製薬',
+            'bms': 'ブリストル・マイヤーズ スクイブ',
+            'chugai': '中外製薬',
+            'eisai': 'エーザイ',
+            'takeda': '武田薬品',
+            'other': 'その他'
+        };
+
+        const companyColors = {
+            'abbvie': '#ff6b35',
+            'novartis': '#0077be',
+            'symbio': '#28a745',
+            'bms': '#6f42c1',
+            'chugai': '#fd7e14',
+            'eisai': '#007bff',
+            'takeda': '#20c997',
+            'other': '#6c757d'
+        };
 
         // URLかどうかを判定する関数
         function isURL(str) {
@@ -682,9 +735,42 @@
         function createProductTags(products) {
             if (!products || products.length === 0) return '';
             
-            return products.map(product => 
-                `<span class="product-tag">${product}</span>`
-            ).join('');
+            return products.map(product => {
+                const isEpcoritamab = product.toLowerCase().includes('エプキンリ') || product.toLowerCase().includes('epcoritamab');
+                const tagClass = isEpcoritamab ? 'epcoritamab' : 'default';
+                return `<span class="product-tag ${tagClass}">${product}</span>`;
+            }).join('');
+        }
+
+        // 講演会のスタイルクラスを決定
+        function getLectureClass(lecture) {
+            // エプキンリが含まれる場合は特別スタイル
+            if (lecture.products && lecture.products.some(p => 
+                p.toLowerCase().includes('エプキンリ') || p.toLowerCase().includes('epcoritamab')
+            )) {
+                return 'epcoritamab';
+            }
+            return lecture.company || 'other';
+        }
+
+        // 一意のIDを生成
+        function generateId() {
+            return 'lecture_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        }
+
+        // 会社プレビュー更新
+        function updateCompanyPreview() {
+            const companySelect = document.getElementById('lectureCompany');
+            const preview = document.getElementById('companyPreview');
+            const selectedCompany = companySelect.value;
+            
+            if (selectedCompany) {
+                preview.textContent = companyNames[selectedCompany];
+                preview.style.background = `linear-gradient(135deg, ${companyColors[selectedCompany]}, ${companyColors[selectedCompany]}dd)`;
+                preview.style.display = 'inline-block';
+            } else {
+                preview.style.display = 'none';
+            }
         }
 
         function renderCalendar() {
@@ -735,9 +821,20 @@
                 if (lectures[dateKey]) {
                     lectures[dateKey].forEach(lecture => {
                         const lectureItem = document.createElement('div');
-                        lectureItem.className = `lecture-item ${lecture.company || 'other'}`;
+                        lectureItem.className = `lecture-item ${getLectureClass(lecture)}`;
                         lectureItem.textContent = `${lecture.startTime} ${lecture.title}`;
                         lectureItem.onclick = () => showLectureDetail(lecture);
+                        
+                        // 編集ボタンを追加
+                        const editBtn = document.createElement('button');
+                        editBtn.className = 'edit-btn';
+                        editBtn.innerHTML = '✏️';
+                        editBtn.onclick = (e) => {
+                            e.stopPropagation();
+                            editLecture(lecture);
+                        };
+                        lectureItem.appendChild(editBtn);
+                        
                         dayCell.appendChild(lectureItem);
                     });
                 }
@@ -770,14 +867,7 @@
         function showLectureDetail(lecture) {
             document.getElementById('modalTitle').textContent = lecture.title;
             
-            let companyName = '';
-            switch(lecture.company) {
-                case 'novartis': companyName = 'Novartis'; break;
-                case 'symbio': companyName = 'SymBio製薬'; break;
-                case 'bms': companyName = 'ブリストル・マイヤーズ スクイブ'; break;
-                case 'chugai': companyName = '中外製薬'; break;
-                default: companyName = 'その他'; break;
-            }
+            let companyName = companyNames[lecture.company] || 'その他';
             
             let endDateInfo = '';
             if (lecture.endDate) {
@@ -799,11 +889,82 @@
             
             document.getElementById('modalBody').innerHTML = `
                 <div class="lecture-detail">
+                    <span class="detail-label">主催:</span>
+                    <span class="detail-value">${companyName}</span>
+                </div>
+                <div class="lecture-detail">
+                    <span class="detail-label">開催時間:</span>
+                    <div class="detail-value">${formatTime(lecture.startTime, lecture.endTime)}</div>
+                </div>
+                ${endDateInfo}
+                <div class="lecture-detail">
+                    <span class="detail-label">講演者:</span>
+                    <span class="detail-value">${lecture.speaker}</span>
+                </div>
+                <div class="lecture-detail">
+                    <span class="detail-label">会場:</span>
+                    <div class="detail-value">${formatVenue(lecture.location)}</div>
+                </div>
+                ${productsInfo}
+                <div class="lecture-detail">
                     <span class="detail-label">概要:</span>
                     <div class="detail-value" style="margin-top: 10px; line-height: 1.6;">${lecture.description}</div>
                 </div>
+                <div class="action-buttons">
+                    <button class="btn-primary btn-edit" onclick="editLecture(currentLecture)">✏️ 編集</button>
+                    <button class="btn-primary btn-delete" onclick="deleteLecture(currentLecture)">🗑️ 削除</button>
+                </div>
             `;
+            
+            window.currentLecture = lecture;
             document.getElementById('lectureModal').style.display = 'block';
+        }
+
+        function editLecture(lecture) {
+            editingLectureId = lecture.id;
+            
+            // フォームに既存データを入力
+            document.getElementById('lectureTitle').value = lecture.title;
+            document.getElementById('lectureDate').value = findLectureDate(lecture.id);
+            document.getElementById('lectureStartTime').value = lecture.startTime;
+            document.getElementById('lectureEndTime').value = lecture.endTime || '';
+            document.getElementById('lectureSpeaker').value = lecture.speaker;
+            document.getElementById('lectureLocation').value = lecture.location;
+            document.getElementById('lectureCompany').value = lecture.company;
+            document.getElementById('lectureProducts').value = lecture.products ? lecture.products.join(', ') : '';
+            document.getElementById('lectureDescription').value = lecture.description;
+            
+            // モーダルタイトルと送信ボタンを変更
+            document.getElementById('addModalTitle').textContent = '講演会を編集';
+            document.getElementById('submitBtn').textContent = '更新';
+            
+            updateCompanyPreview();
+            closeLectureModal();
+            document.getElementById('addLectureModal').style.display = 'block';
+        }
+
+        function deleteLecture(lecture) {
+            if (confirm('この講演会を削除しますか？')) {
+                const dateKey = findLectureDate(lecture.id);
+                if (dateKey && lectures[dateKey]) {
+                    lectures[dateKey] = lectures[dateKey].filter(l => l.id !== lecture.id);
+                    if (lectures[dateKey].length === 0) {
+                        delete lectures[dateKey];
+                    }
+                }
+                renderCalendar();
+                closeLectureModal();
+                alert('講演会が削除されました。');
+            }
+        }
+
+        function findLectureDate(lectureId) {
+            for (const [date, lectureList] of Object.entries(lectures)) {
+                if (lectureList.some(l => l.id === lectureId)) {
+                    return date;
+                }
+            }
+            return null;
         }
 
         function closeLectureModal() {
@@ -811,12 +972,18 @@
         }
 
         function showAddLectureModal() {
+            editingLectureId = null;
+            document.getElementById('addModalTitle').textContent = '新しい講演会を追加';
+            document.getElementById('submitBtn').textContent = '追加';
             document.getElementById('addLectureModal').style.display = 'block';
+            updateCompanyPreview();
         }
 
         function closeAddLectureModal() {
             document.getElementById('addLectureModal').style.display = 'none';
             document.getElementById('addLectureForm').reset();
+            editingLectureId = null;
+            updateCompanyPreview();
         }
 
         document.getElementById('addLectureForm').addEventListener('submit', function(e) {
@@ -835,26 +1002,61 @@
             // 製品リストを配列に変換
             const productArray = products ? products.split(',').map(p => p.trim()).filter(p => p) : [];
             
-            const newLecture = {
-                title: title,
-                startTime: startTime,
-                endTime: endTime || null,
-                speaker: speaker,
-                location: location,
-                description: description,
-                company: company,
-                products: productArray
-            };
-            
-            if (!lectures[date]) {
-                lectures[date] = [];
+            if (editingLectureId) {
+                // 編集モード
+                const oldDate = findLectureDate(editingLectureId);
+                
+                // 古いデータを削除
+                if (oldDate && lectures[oldDate]) {
+                    lectures[oldDate] = lectures[oldDate].filter(l => l.id !== editingLectureId);
+                    if (lectures[oldDate].length === 0) {
+                        delete lectures[oldDate];
+                    }
+                }
+                
+                // 新しいデータを追加
+                const updatedLecture = {
+                    id: editingLectureId,
+                    title: title,
+                    startTime: startTime,
+                    endTime: endTime || null,
+                    speaker: speaker,
+                    location: location,
+                    description: description,
+                    company: company,
+                    products: productArray
+                };
+                
+                if (!lectures[date]) {
+                    lectures[date] = [];
+                }
+                lectures[date].push(updatedLecture);
+                
+                alert('講演会が更新されました！');
+            } else {
+                // 新規追加モード
+                const newLecture = {
+                    id: generateId(),
+                    title: title,
+                    startTime: startTime,
+                    endTime: endTime || null,
+                    speaker: speaker,
+                    location: location,
+                    description: description,
+                    company: company,
+                    products: productArray
+                };
+                
+                if (!lectures[date]) {
+                    lectures[date] = [];
+                }
+                lectures[date].push(newLecture);
+                
+                alert('講演会が追加されました！');
             }
-            lectures[date].push(newLecture);
             
             renderCalendar();
             closeAddLectureModal();
-            
-            alert('講演会が追加されました！');
         });
 
         // モーダル外クリックで閉じる
@@ -871,22 +1073,5 @@
         }
 
         // 初期化
-        renderCalendar();detail-label">主催:</span>
-                    <span class="detail-value">${companyName}</span>
-                </div>
-                <div class="lecture-detail">
-                    <span class="detail-label">開催時間:</span>
-                    <div class="detail-value">${formatTime(lecture.startTime, lecture.endTime)}</div>
-                </div>
-                ${endDateInfo}
-                <div class="lecture-detail">
-                    <span class="detail-label">講演者:</span>
-                    <span class="detail-value">${lecture.speaker}</span>
-                </div>
-                <div class="lecture-detail">
-                    <span class="detail-label">会場:</span>
-                    <div class="detail-value">${formatVenue(lecture.location)}</div>
-                </div>
-                ${productsInfo}
-                <div class="lecture-detail">
-                    <span class="
+        updateCompanyPreview();
+        renderCalendar();
