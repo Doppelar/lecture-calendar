@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>講演会カレンダー</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Hiragino Sans', 'Yu Gothic', 'Meiryo', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2c3e50, #3498db);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            font-weight: 300;
+        }
+
+        .calendar-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 30px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .nav-button {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .nav-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .current-month {
+            font-size: 1.8rem;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .calendar {
+            padding: 30px;
+        }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 1px;
+            background: #e9ecef;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .day-header {
+            background: #495057;
+            color: white;
+            padding: 15px;
+            text-align: center;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .day-cell {
+            background: white;
+            min-height: 120px;
+            padding: 10px;
+            position: relative;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .day-cell:hover {
+            background: #f8f9fa;
+            transform: scale(1.02);
+        }
+
+        .day-number {
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 8px;
+        }
+
+        .other-month {
+            color: #adb5bd;
+            background: #f8f9fa;
+        }
+
+        .today {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .today .day-number {
+            color: white;
+        }
+
+        .lecture-item {
+            color: white;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            margin-bottom: 2px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .lecture-item.novartis {
+            background: linear-gradient(135deg, #00a8cc, #0077be);
+        }
+
+        .lecture-item.symbio {
+            background: linear-gradient(135deg, #28a745, #20c997);
+        }
+
+        .lecture-item.bms {
+            background: linear-gradient(135deg, #6f42c1, #e83e8c);
+        }
+
+        .lecture-item.chugai {
+            background: linear-gradient(135deg, #fd7e14, #dc3545);
+        }
+
+        .lecture-item.other {
+            background: linear-gradient(135deg, #6c757d, #495057);
+        }
+
+        .lecture-item:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-content {
+            background: white;
+            margin: 5% auto;
+            padding: 0;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 600px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+            animation: modalSlideIn 0.3s ease;
+        }
+
+        @keyframes modalSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, #2c3e50, #3498db);
+            color: white;
+            padding: 25px 30px;
+            position: relative;
+        }
+
+        .modal-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        .close {
+            position: absolute;
+            right: 20px;
+            top: 20px;
+            color: white;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .close:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: rotate(90deg);
+        }
+
+        .modal-body {
+            padding: 30px;
+        }
+
+        .lecture-detail {
+            margin-bottom: 20px;
+        }
+
+        .detail-label {
+            font-weight: 600;
+            color: #495057;
+            display: inline-block;
+            width: 80px;
+            margin-bottom: 5px;
+        }
+
+        .detail-value {
+            color: #6c757d;
+        }
+
+        .add-lecture-btn {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            font-size: 24px;
+            cursor: pointer;
+            box-shadow: 0 10px 25px rgba(40, 167, 69, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .add-lecture-btn:hover {
+            transform: scale(1.1) rotate(45deg);
+            box-shadow: 0 15px 30px rgba(40, 167, 69, 0.4);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #495057;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .form-textarea {
+            height: 100px;
+            resize: vertical;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            margin-right: 10px;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .btn-secondary:hover {
+            background: #545b62;
+            transform: translateY(-2px);
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .calendar-nav {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .current-month {
+                font-size: 1.5rem;
+            }
+            
+            .day-cell {
+                min-height: 100px;
+                padding: 8px;
+            }
+            
+            .lecture-item {
+                font-size: 10px;
+                padding: 2px 6px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📅 講演会カレンダー</h1>
+            <p>講演会・セミナー情報を一目で確認</p>
+        </div>
+
+        <div class="calendar-nav">
+            <button class="nav-button" onclick="previousMonth()">← 前月</button>
+            <div class="current-month" id="currentMonth"></div>
+            <button class="nav-button" onclick="nextMonth()">次月 →</button>
+        </div>
+
+        <div class="calendar">
+            <div class="calendar-grid" id="calendar">
+                <!-- カレンダーがここに生成されます -->
+            </div>
+        </div>
+    </div>
+
+    <button class="add-lecture-btn" onclick="showAddLectureModal()">+</button>
+
+    <!-- 講演会詳細モーダル -->
+    <div id="lectureModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title" id="modalTitle">講演会詳細</div>
+                <span class="close" onclick="closeLectureModal()">&times;</span>
+            </div>
+            <div class="modal-body" id="modalBody">
+                <!-- 講演会詳細がここに表示されます -->
+            </div>
+        </div>
+    </div>
+
+    <!-- 講演会追加モーダル -->
+    <div id="addLectureModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">新しい講演会を追加</div>
+                <span class="close" onclick="closeAddLectureModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="addLectureForm">
+                    <div class="form-group">
+                        <label class="form-label" for="lectureTitle">講演会タイトル</label>
+                        <input type="text" id="lectureTitle" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="lectureDate">開催日</label>
+                        <input type="date" id="lectureDate" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="lectureTime">開催時間</label>
+                        <input type="time" id="lectureTime" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="lectureSpeaker">講演者</label>
+                        <input type="text" id="lectureSpeaker" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="lectureLocation">会場</label>
+                        <input type="text" id="lectureLocation" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="lectureDescription">概要</label>
+                        <textarea id="lectureDescription" class="form-input form-textarea"></textarea>
+                    </div>
+                    <div style="text-align: center; margin-top: 30px;">
+                        <button type="submit" class="btn-primary">追加</button>
+                        <button type="button" class="btn-secondary" onclick="closeAddLectureModal()">キャンセル</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentDate = new Date();
+        let         lectures = {
+            '2025-06-09': [
+                {
+                    title: 'CRS/ICANSマネジメントセミナー',
+                    time: '18:30',
+                    speaker: '藤本 勝也先生 他',
+                    location: 'オンライン',
+                    description: 'CRS対策における薬剤師の役割、看護師の実体験と対応、二重特異性抗体によるICANSへの早期対応などについて',
+                    company: 'other',
+                    endDate: '2025-06-16'
+                }
+            ],
+            '2025-06-11': [
+                {
+                    title: 'SymBio Medical Profession Lecture',
+                    time: '19:00',
+                    speaker: '中村 孝子先生',
+                    location: 'WEBセミナー',
+                    description: '化学療法センターにおける問診すり抜け割合の削減について',
+                    company: 'symbio'
+                }
+            ],
+            '2025-06-12': [
+                {
+                    title: 'Novartis - 生成AIと血液診療',
+                    time: '19:00',
+                    speaker: '赤羽 大悟先生、今井 翔太先生',
+                    location: 'オンライン',
+                    description: '臨床医が知っておきたいAIの進歩とこれから、生成AIで世界はこう変わる',
+                    company: 'novartis'
+                }
+            ],
+            '2025-06-17': [
+                {
+                    title: 'Hematology Rookies Seminar',
+                    time: '18:30',
+                    speaker: '渡邉 純一先生',
+                    location: 'オンライン（Live配信）',
+                    description: '悪性リンパ腫を理解する分類・診断・治療の要点整理',
+                    company: 'other'
+                }
+            ],
+            '2025-06-19': [
+                {
+                    title: 'Novartis Hematology Web Seminar',
+                    time: '19:00',
+                    speaker: '豊嶋 崇徳先生、藤本 亜弓先生、赤星 佑先生',
+                    location: 'オンライン',
+                    description: '血液内科の魅力を伝える～私が思う血液内科医のイメージと実際、造血幹細胞移植について',
+                    company: 'novartis'
+                }
+            ],
+            '2025-06-23': [
+                {
+                    title: 'SymBio Case Report seminar',
+                    time: '19:00',
+                    speaker: '梶 大介先生、中村 嵩先生、横山 絵美先生',
+                    location: 'WEBセミナー',
+                    description: 'ベンダムスチンによる日和見感染について、BG療法後のCMV感染が起因となったPAI、BG療法によって発現したPML',
+                    company: 'symbio'
+                }
+            ],
+            '2025-06-25': [
+                {
+                    title: 'BMS Lymphoma Web Seminar',
+                    time: '19:00',
+                    speaker: '梶 大介先生',
+                    location: 'オンライン',
+                    description: 'CART細胞療法によるFL治療の進化：新たな可能性',
+                    company: 'bms'
+                }
+            ],
+            '2025-07-10': [
+                {
+                    title: '中外eセミナー on DLBCL',
+                    time: '18:30',
+                    speaker: '正木 康史先生、梶 大介先生、鎌田 浩稔先生',
+                    location: 'オンライン',
+                    description: '高齢者DLBCLの疫学とPOLARIX試験の解釈、高齢者DLBCLにおける治療戦略',
+                    company: 'chugai',
+                    endDate: '2025-07-17'
+                }
+            ],
+            '2025-07-16': [
+                {
+                    title: 'BMS Lymphoma Web Seminar',
+                    time: '19:00',
+                    speaker: '時田 真一先生',
+                    location: 'オンライン',
+                    description: '症例から考えるDLBCLに対するCAR T細胞療法の位置付け',
+                    company: 'bms'
+                }
+            ]
+        };
+
+        const monthNames = [
+            '1月', '2月', '3月', '4月', '5月', '6月',
+            '7月', '8月', '9月', '10月', '11月', '12月'
+        ];
+
+        const dayNames = ['日', '月', '火', '水', '木', '金', '土'];
+
+        function renderCalendar() {
+            const year = currentDate.getFullYear();
+            const month = currentDate.getMonth();
+            
+            document.getElementById('currentMonth').textContent = `${year}年 ${monthNames[month]}`;
+            
+            const firstDay = new Date(year, month, 1);
+            const lastDay = new Date(year, month + 1, 0);
+            const startDate = new Date(firstDay);
+            startDate.setDate(startDate.getDate() - firstDay.getDay());
+            
+            const calendar = document.getElementById('calendar');
+            calendar.innerHTML = '';
+            
+            // 曜日ヘッダー
+            dayNames.forEach(day => {
+                const dayHeader = document.createElement('div');
+                dayHeader.className = 'day-header';
+                dayHeader.textContent = day;
+                calendar.appendChild(dayHeader);
+            });
+            
+            // カレンダーの日付
+            for (let i = 0; i < 42; i++) {
+                const date = new Date(startDate);
+                date.setDate(startDate.getDate() + i);
+                
+                const dayCell = document.createElement('div');
+                dayCell.className = 'day-cell';
+                
+                if (date.getMonth() !== month) {
+                    dayCell.classList.add('other-month');
+                }
+                
+                if (isToday(date)) {
+                    dayCell.classList.add('today');
+                }
+                
+                const dayNumber = document.createElement('div');
+                dayNumber.className = 'day-number';
+                dayNumber.textContent = date.getDate();
+                dayCell.appendChild(dayNumber);
+                
+                // 講演会情報を追加
+                const dateKey = formatDate(date);
+                if (lectures[dateKey]) {
+                    lectures[dateKey].forEach(lecture => {
+                        const lectureItem = document.createElement('div');
+                        lectureItem.className = `lecture-item ${lecture.company || 'other'}`;
+                        lectureItem.textContent = `${lecture.time} ${lecture.title}`;
+                        lectureItem.onclick = () => showLectureDetail(lecture);
+                        dayCell.appendChild(lectureItem);
+                    });
+                }
+                
+                calendar.appendChild(dayCell);
+            }
+        }
+
+        function isToday(date) {
+            const today = new Date();
+            return date.toDateString() === today.toDateString();
+        }
+
+        function formatDate(date) {
+            return date.getFullYear() + '-' + 
+                   String(date.getMonth() + 1).padStart(2, '0') + '-' + 
+                   String(date.getDate()).padStart(2, '0');
+        }
+
+        function previousMonth() {
+            currentDate.setMonth(currentDate.getMonth() - 1);
+            renderCalendar();
+        }
+
+        function nextMonth() {
+            currentDate.setMonth(currentDate.getMonth() + 1);
+            renderCalendar();
+        }
+
+        function showLectureDetail(lecture) {
+            document.getElementById('modalTitle').textContent = lecture.title;
+            
+            let companyName = '';
+            switch(lecture.company) {
+                case 'novartis': companyName = 'Novartis'; break;
+                case 'symbio': companyName = 'SymBio'; break;
+                case 'bms': companyName = 'BMS'; break;
+                case 'chugai': companyName = '中外製薬'; break;
+                default: companyName = ''; break;
+            }
+            
+            let endDateInfo = '';
+            if (lecture.endDate) {
+                endDateInfo = `<div class="lecture-detail">
+                    <span class="detail-label">終了予定:</span>
+                    <span class="detail-value">${lecture.endDate}</span>
+                </div>`;
+            }
+            
+            document.getElementById('modalBody').innerHTML = `
+                ${companyName ? `<div class="lecture-detail">
+                    <span class="detail-label">主催:</span>
+                    <span class="detail-value">${companyName}</span>
+                </div>` : ''}
+                <div class="lecture-detail">
+                    <span class="detail-label">開催時間:</span>
+                    <span class="detail-value">${lecture.time}</span>
+                </div>
+                ${endDateInfo}
+                <div class="lecture-detail">
+                    <span class="detail-label">講演者:</span>
+                    <span class="detail-value">${lecture.speaker}</span>
+                </div>
+                <div class="lecture-detail">
+                    <span class="detail-label">会場:</span>
+                    <span class="detail-value">${lecture.location}</span>
+                </div>
+                <div class="lecture-detail">
+                    <span class="detail-label">概要:</span>
+                    <div class="detail-value" style="margin-top: 10px; line-height: 1.6;">${lecture.description}</div>
+                </div>
+            `;
+            document.getElementById('lectureModal').style.display = 'block';
+        }
+
+        function closeLectureModal() {
+            document.getElementById('lectureModal').style.display = 'none';
+        }
+
+        function showAddLectureModal() {
+            document.getElementById('addLectureModal').style.display = 'block';
+        }
+
+        function closeAddLectureModal() {
+            document.getElementById('addLectureModal').style.display = 'none';
+            document.getElementById('addLectureForm').reset();
+        }
+
+        document.getElementById('addLectureForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const title = document.getElementById('lectureTitle').value;
+            const date = document.getElementById('lectureDate').value;
+            const time = document.getElementById('lectureTime').value;
+            const speaker = document.getElementById('lectureSpeaker').value;
+            const location = document.getElementById('lectureLocation').value;
+            const description = document.getElementById('lectureDescription').value;
+            
+            const newLecture = {
+                title: title,
+                time: time,
+                speaker: speaker,
+                location: location,
+                description: description,
+                company: 'other'
+            };
+            
+            if (!lectures[date]) {
+                lectures[date] = [];
+            }
+            lectures[date].push(newLecture);
+            
+            renderCalendar();
+            closeAddLectureModal();
+            
+            alert('講演会が追加されました！');
+        });
+
+        // モーダル外クリックで閉じる
+        window.onclick = function(event) {
+            const lectureModal = document.getElementById('lectureModal');
+            const addLectureModal = document.getElementById('addLectureModal');
+            
+            if (event.target === lectureModal) {
+                closeLectureModal();
+            }
+            if (event.target === addLectureModal) {
+                closeAddLectureModal();
+            }
+        }
+
+        // 初期化
+        renderCalendar();
+    </script>
+</body>
+</html>
