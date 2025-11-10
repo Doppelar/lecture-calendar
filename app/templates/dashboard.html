@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% block title %}ダッシュボード | スマート家計簿{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h1 class="h3">ダッシュボード</h1>
+  <a href="{{ url_for('main.add_receipt') }}" class="btn btn-primary">レシート登録</a>
+</div>
+
+<div class="row g-4 mb-4">
+  <div class="col-md-4">
+    <div class="card text-bg-light">
+      <div class="card-body">
+        <h5 class="card-title">累計支出</h5>
+        <p class="display-6">¥{{ '{:,.2f}'.format(total) }}</p>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-8">
+    <div class="card">
+      <div class="card-body">
+        <h5 class="card-title">カテゴリー別</h5>
+        <ul class="list-group list-group-flush">
+          {% for category, amount in totals_by_category.items() %}
+          <li class="list-group-item d-flex justify-content-between align-items-center">
+            <span>{{ category }}</span>
+            <span>¥{{ '{:,.2f}'.format(amount) }}</span>
+          </li>
+          {% else %}
+          <li class="list-group-item">データがありません。</li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card shadow-sm">
+  <div class="card-body">
+    <h2 class="card-title h4 mb-3">最近のレシート</h2>
+    <div class="table-responsive">
+      <table class="table table-striped align-middle">
+        <thead>
+          <tr>
+            <th scope="col">日付</th>
+            <th scope="col">お店</th>
+            <th scope="col">金額</th>
+            <th scope="col">項目</th>
+            <th scope="col">詳細</th>
+            <th scope="col">操作</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for receipt in receipts %}
+          <tr>
+            <td>{{ receipt.purchase_date.strftime('%Y-%m-%d') }}</td>
+            <td>
+              {{ receipt.store_name }}<br>
+              {% if receipt.image_filename %}
+              <a href="{{ url_for('main.uploaded_file', filename=receipt.image_filename) }}" target="_blank" class="small">画像を見る</a>
+              {% endif %}
+            </td>
+            <td>¥{{ '{:,.2f}'.format(receipt.amount) }}</td>
+            <td>{{ receipt.category }}</td>
+            <td>
+              {% if receipt.items %}
+              <div><strong>購入内容:</strong> {{ receipt.items }}</div>
+              {% endif %}
+              {% if receipt.notes %}
+              <div class="text-muted small">メモ: {{ receipt.notes }}</div>
+              {% endif %}
+            </td>
+            <td><a class="btn btn-sm btn-outline-secondary" href="{{ url_for('main.edit_receipt', receipt_id=receipt.id) }}">編集</a></td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="6" class="text-center text-muted">まだレシートが登録されていません。</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

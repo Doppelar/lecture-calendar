@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}レシート編集 | スマート家計簿{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-8">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h1 class="h4 mb-3">レシート編集</h1>
+        <form method="post">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label for="purchase_date" class="form-label">購入日</label>
+              <input type="date" class="form-control" id="purchase_date" name="purchase_date" value="{{ receipt.purchase_date.strftime('%Y-%m-%d') }}" required>
+            </div>
+            <div class="col-md-6">
+              <label for="store_name" class="form-label">お店</label>
+              <input type="text" class="form-control" id="store_name" name="store_name" value="{{ receipt.store_name }}" required>
+            </div>
+          </div>
+          <div class="row g-3 mt-0">
+            <div class="col-md-6">
+              <label for="amount" class="form-label">金額</label>
+              <input type="text" class="form-control" id="amount" name="amount" value="{{ '{:,.2f}'.format(receipt.amount) }}" required>
+            </div>
+            <div class="col-md-6">
+              <label for="category" class="form-label">項目</label>
+              <select id="category" name="category" class="form-select" required>
+                {% for category in categories %}
+                <option value="{{ category }}" {% if receipt.category == category %}selected{% endif %}>{{ category }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+          <div class="mt-3">
+            <label for="items" class="form-label">購入した詳細（任意）</label>
+            <textarea class="form-control" id="items" name="items" rows="3">{{ receipt.items }}</textarea>
+          </div>
+          <div class="mt-3">
+            <label for="notes" class="form-label">メモ（任意）</label>
+            <textarea class="form-control" id="notes" name="notes" rows="2">{{ receipt.notes }}</textarea>
+          </div>
+          {% if receipt.ai_summary %}
+          <div class="mt-3">
+            <details>
+              <summary>AI解析情報</summary>
+              <pre class="small bg-light p-3 rounded">{{ receipt.ai_summary }}</pre>
+            </details>
+          </div>
+          {% endif %}
+          {% if receipt.image_filename %}
+          <div class="mt-3">
+            <a href="{{ url_for('main.uploaded_file', filename=receipt.image_filename) }}" target="_blank">アップロードしたファイルを見る</a>
+          </div>
+          {% endif %}
+          <div class="text-end mt-4">
+            <button type="submit" class="btn btn-primary">更新する</button>
+            <a href="{{ url_for('main.dashboard') }}" class="btn btn-secondary">戻る</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
