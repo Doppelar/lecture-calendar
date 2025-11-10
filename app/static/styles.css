@@ -1,0 +1,19 @@
+body {
+  background-color: #f8f9fa;
+}
+
+.navbar-brand {
+  font-weight: 600;
+}
+
+.card {
+  border-radius: 0.75rem;
+}
+
+.table td, .table th {
+  vertical-align: middle;
+}
+
+textarea {
+  resize: vertical;
+}

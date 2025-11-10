@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}レシート登録 | スマート家計簿{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-8">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h1 class="h4 mb-3">レシート登録</h1>
+        <form method="post" enctype="multipart/form-data">
+          <div class="mb-3">
+            <label for="receipt_image" class="form-label">レシート画像またはテキスト</label>
+            <input class="form-control" type="file" id="receipt_image" name="receipt_image" accept="image/*,.txt,.pdf">
+            <div class="form-text">PNG/JPG/GIF/TXT/PDFに対応。アップロードするとAIが内容を推定します。</div>
+          </div>
+          {% if ai_result %}
+          <div class="alert alert-info">
+            <h2 class="h6">AIの推定結果</h2>
+            <ul class="mb-0 small">
+              <li>日付: {{ ai_result.get('purchase_date') }}</li>
+              <li>お店: {{ ai_result.get('store_name') }}</li>
+              <li>金額: {{ ai_result.get('amount') }}</li>
+              <li>項目: {{ ai_result.get('category') }}</li>
+              {% if ai_result.get('items') %}
+              <li>推定購入内容: {{ ai_result.get('items') }}</li>
+              {% endif %}
+            </ul>
+          </div>
+          {% endif %}
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label for="purchase_date" class="form-label">購入日</label>
+              <input type="date" class="form-control" id="purchase_date" name="purchase_date" value="{{ (form_data.get('purchase_date') if form_data else '') or (ai_result.get('purchase_date') if ai_result else '') }}" required>
+            </div>
+            <div class="col-md-6">
+              <label for="store_name" class="form-label">お店</label>
+              <input type="text" class="form-control" id="store_name" name="store_name" value="{{ (form_data.get('store_name') if form_data else '') or (ai_result.get('store_name') if ai_result else '') }}" required>
+            </div>
+          </div>
+          <div class="row g-3 mt-0">
+            <div class="col-md-6">
+              <label for="amount" class="form-label">金額</label>
+              <input type="text" class="form-control" id="amount" name="amount" value="{{ (form_data.get('amount') if form_data else '') or (ai_result.get('amount') if ai_result else '') }}" required>
+            </div>
+            <div class="col-md-6">
+              <label for="category" class="form-label">項目</label>
+              <select id="category" name="category" class="form-select" required>
+                {% for category in categories %}
+                {% set selected_category = (form_data.get('category') if form_data else (ai_result.get('category') if ai_result else 'other')) %}
+                <option value="{{ category }}" {% if selected_category == category %}selected{% endif %}>{{ category }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+          <div class="mt-3">
+            <label for="items" class="form-label">購入した詳細（任意）</label>
+            <textarea class="form-control" id="items" name="items" rows="3">{{ (form_data.get('items') if form_data else '') or (ai_result.get('items') if ai_result else '') }}</textarea>
+            <div class="form-text">AIの推定内容はここにコピーされます。必要に応じて編集してください。</div>
+          </div>
+          <div class="mt-3">
+            <label for="notes" class="form-label">メモ（任意）</label>
+            <textarea class="form-control" id="notes" name="notes" rows="2">{{ form_data.get('notes') if form_data else '' }}</textarea>
+          </div>
+          <div class="text-end mt-4">
+            <button type="submit" class="btn btn-primary">保存する</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
