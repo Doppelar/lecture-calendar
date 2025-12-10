@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>講演会カレンダー</title>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -473,6 +474,135 @@
             margin-top: 10px;
         }
 
+        /* Excel 集計エリア */
+        .excel-section {
+            max-width: 1200px;
+            margin: 40px auto 0;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            padding: 28px;
+        }
+
+        .excel-section h2 {
+            font-size: 1.8rem;
+            color: #2c3e50;
+            margin-bottom: 12px;
+        }
+
+        .excel-section p {
+            color: #6c757d;
+            margin-bottom: 16px;
+            line-height: 1.6;
+        }
+
+        .file-input {
+            display: inline-block;
+            padding: 12px 18px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: #fff;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+        }
+
+        .file-input:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.25);
+        }
+
+        .file-input input {
+            display: none;
+        }
+
+        .table-wrapper {
+            margin-top: 24px;
+            overflow-x: auto;
+        }
+
+        .styled-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 14px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06);
+        }
+
+        .styled-table th,
+        .styled-table td {
+            padding: 12px 14px;
+            text-align: left;
+            border-bottom: 1px solid #f1f3f5;
+            font-size: 14px;
+        }
+
+        .styled-table thead {
+            background: linear-gradient(135deg, #2c3e50, #3498db);
+            color: white;
+        }
+
+        .styled-table tbody tr:nth-child(even) {
+            background: #f8f9fa;
+        }
+
+        .styled-table tbody tr:hover {
+            background: #f1f3f5;
+        }
+
+        .facility-block {
+            margin-bottom: 18px;
+            border: 1px solid #e9ecef;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .facility-header {
+            background: #f8f9fa;
+            padding: 14px 16px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .facility-title {
+            font-weight: 700;
+            color: #2c3e50;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 6px 10px;
+            border-radius: 10px;
+            background: #e9ecef;
+            color: #495057;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .days-badge {
+            background: linear-gradient(135deg, #ffc107, #f2994a);
+            color: #fff;
+        }
+
+        .total-badge {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: #fff;
+        }
+
+        .muted {
+            color: #6c757d;
+            font-size: 14px;
+        }
+
+        .number-cell {
+            text-align: right;
+            font-variant-numeric: tabular-nums;
+        }
+
         @media (max-width: 768px) {
             .header h1 {
                 font-size: 2rem;
@@ -620,6 +750,24 @@
             </div>
         </div>
     </div>
+
+    <section class="excel-section">
+        <h2>エプキンリ4mg 納入状況ダッシュボード</h2>
+        <p>
+            最新のExcelファイル（.xlsx / .xls / .csv）をアップロードすると、エプキンリ4mgの納入本数を
+            施設ごと・月ごとに自動集計し、最終納入日から本日までの日数も計算します。
+        </p>
+        <label class="file-input">
+            📁 ファイルを選択
+            <input type="file" id="excelFile" accept=".xlsx,.xls,.csv">
+        </label>
+
+        <div class="table-wrapper" id="facilityTableWrapper">
+            <p class="muted">まだファイルが読み込まれていません。</p>
+        </div>
+
+        <div class="table-wrapper" id="monthlyTableWrapper"></div>
+    </section>
 
     <script>
         let currentDate = new Date();
@@ -1075,3 +1223,193 @@
         // 初期化
         updateCompanyPreview();
         renderCalendar();
+
+        // ================= Excel 集計機能 =================
+        const excelFileInput = document.getElementById('excelFile');
+
+        excelFileInput.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                const sheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[sheetName];
+                const rows = XLSX.utils.sheet_to_json(worksheet, { raw: false });
+                processDeliveryData(rows);
+            };
+            reader.readAsArrayBuffer(file);
+        });
+
+        function processDeliveryData(rows) {
+            const facilities = {};
+            const monthlyTotals = {};
+            const today = new Date();
+
+            rows.forEach((row) => {
+                const productName = String(row['製品名'] || row['品目名'] || '').trim();
+                if (!isEpcoritamab4mg(productName)) return;
+
+                const quantity = Number(row['納入数量'] || row['数量'] || row['本数'] || 0);
+                if (!quantity || isNaN(quantity)) return;
+
+                const dateValue = row['発伝年月日'] || row['納入日'] || row['レポート年月日'];
+                const deliveryDate = normalizeExcelDate(dateValue);
+                if (!deliveryDate) return;
+
+                const facilityName = row['正式施設名'] || row['納入先施設名'] || row['納入先施設名'] || '不明な施設';
+                const facilityCode = row['施設コード'] || row['納入先施設コード'] || '施設コード不明';
+                const key = `${facilityCode}_${facilityName}`;
+
+                if (!facilities[key]) {
+                    facilities[key] = {
+                        name: facilityName,
+                        code: facilityCode,
+                        deliveries: []
+                    };
+                }
+
+                facilities[key].deliveries.push({ date: deliveryDate, quantity });
+
+                const monthKey = formatMonthKey(deliveryDate);
+                monthlyTotals[monthKey] = (monthlyTotals[monthKey] || 0) + quantity;
+            });
+
+            renderFacilityTables(facilities, today);
+            renderMonthlyTable(monthlyTotals);
+        }
+
+        function isEpcoritamab4mg(productName = '') {
+            const normalized = productName.toLowerCase();
+            const containsName = normalized.includes('エプキンリ') || normalized.includes('epcoritamab');
+            const contains4mg = ['4mg', '4ｍｇ', '４ｍｇ', '４mg'].some(token => normalized.includes(token));
+            return containsName && contains4mg;
+        }
+
+        function normalizeExcelDate(value) {
+            if (!value) return null;
+            if (value instanceof Date) return value;
+
+            if (typeof value === 'number' && XLSX?.SSF?.parse_date_code) {
+                const parsed = XLSX.SSF.parse_date_code(value);
+                if (parsed) return new Date(parsed.y, parsed.m - 1, parsed.d);
+            }
+
+            if (typeof value === 'string') {
+                const normalized = value.replace(/\./g, '/').replace(/-/g, '/');
+                const date = new Date(normalized);
+                if (!isNaN(date)) return date;
+            }
+            return null;
+        }
+
+        function formatDateDisplay(date) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}/${month}/${day}`;
+        }
+
+        function formatMonthKey(date) {
+            return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+        }
+
+        function diffFromToday(today, targetDate) {
+            const diffMs = today.setHours(0, 0, 0, 0) - targetDate.setHours(0, 0, 0, 0);
+            return Math.floor(diffMs / (1000 * 60 * 60 * 24));
+        }
+
+        function renderFacilityTables(facilities, today) {
+            const wrapper = document.getElementById('facilityTableWrapper');
+            const facilityKeys = Object.keys(facilities);
+
+            if (facilityKeys.length === 0) {
+                wrapper.innerHTML = '<p class="muted">エプキンリ4mgのデータが見つかりませんでした。</p>';
+                return;
+            }
+
+            const blocks = facilityKeys.map((key) => {
+                const facility = facilities[key];
+                facility.deliveries.sort((a, b) => b.date - a.date);
+
+                const latest = facility.deliveries[0];
+                const days = diffFromToday(new Date(today), new Date(latest.date));
+                const total = facility.deliveries.reduce((sum, item) => sum + item.quantity, 0);
+
+                const deliveryRows = facility.deliveries
+                    .map(d => `
+                        <tr>
+                            <td>${formatDateDisplay(d.date)}</td>
+                            <td class="number-cell">${d.quantity.toLocaleString()}</td>
+                        </tr>
+                    `)
+                    .join('');
+
+                return `
+                    <div class="facility-block">
+                        <div class="facility-header">
+                            <div>
+                                <div class="facility-title">${facility.name}</div>
+                                <div class="muted">施設コード: ${facility.code}</div>
+                            </div>
+                            <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                                <span class="badge days-badge">最終納入日: ${formatDateDisplay(latest.date)} / 本日まで ${days}日</span>
+                                <span class="badge total-badge">累計本数: ${total.toLocaleString()} 本</span>
+                            </div>
+                        </div>
+                        <table class="styled-table">
+                            <thead>
+                                <tr>
+                                    <th>納入日</th>
+                                    <th class="number-cell">本数</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${deliveryRows}
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+            });
+
+            wrapper.innerHTML = blocks.join('');
+        }
+
+        function renderMonthlyTable(monthlyTotals) {
+            const wrapper = document.getElementById('monthlyTableWrapper');
+            const months = Object.keys(monthlyTotals).sort();
+
+            if (months.length === 0) {
+                wrapper.innerHTML = '';
+                return;
+            }
+
+            const rows = months
+                .map(month => `
+                    <tr>
+                        <td>${month}</td>
+                        <td class="number-cell">${monthlyTotals[month].toLocaleString()}</td>
+                    </tr>
+                `)
+                .join('');
+
+            wrapper.innerHTML = `
+                <h3 style="margin: 12px 0 8px; color: #2c3e50;">月別合計</h3>
+                <table class="styled-table">
+                    <thead>
+                        <tr>
+                            <th>年月</th>
+                            <th class="number-cell">本数（合計）</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${rows}
+                    </tbody>
+                </table>
+            `;
+        }
+    </script>
+</body>
+</html>
